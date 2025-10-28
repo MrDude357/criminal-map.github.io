@@ -1674,6 +1674,39 @@
             // Инициализация интерфейса
             setMode('new');
         });
-    </script>
+<script>
+const JSONBIN_ID = '69002e4fd0ea881f40c12983';
+const API_KEY = '$2a$10$Exe8Ayjq5LpImQpaw8OBReYjq.H9GpbSrwQnY.382K9DzBI1s.NNy';
+
+async function saveToJsonBin(territories) {
+    try {
+        const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_ID}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Master-Key': API_KEY
+            },
+            body: JSON.stringify({ territories })
+        });
+        return await response.json();
+    } catch (error) {
+        console.error('Ошибка сохранения:', error);
+        localStorage.setItem('sfpd_gang_map_data', JSON.stringify({territories}));
+    }
+}
+
+async function loadFromJsonBin() {
+    try {
+        const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_ID}/latest`);
+        const data = await response.json();
+        return data.record.territories || [];
+    } catch (error) {
+        console.error('Ошибка загрузки:', error);
+        const localData = localStorage.getItem('sfpd_gang_map_data');
+        return localData ? JSON.parse(localData).territories : [];
+    }
+}
+</script>
+</script>
 </body>
 </html>
