@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SFPD - Карта территорий банд</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            background: #0a0a0a;
+            color: #00ff00;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* Экран загрузки */
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            font-family: 'Courier New', monospace;
+        }
+
+        .loading-content {
+            text-align: center;
+        }
+
+        .loading-title {
+            font-size: 24px;
+            margin-bottom: 30px;
+            color: #00ff00;
+        }
+
+        .password-field {
+            background: #001100;
+            border: 1px solid #00ff00;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+            font-size: 18px;
+            letter-spacing: 3px;
+            min-width: 200px;
+        }
+
+        .typing-cursor {
+            display: inline-block;
+            width: 8px;
+            height: 18px;
+            background: #00ff00;
+            margin-left: 2px;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        .loading-dots {
+            display: none;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+
+        .welcome-message {
+            opacity: 0;
+            margin-top: 30px;
+            font-size: 16px;
+            color: #00ff00;
+        }
+
+        /* Основной интерфейс */
+        #main-interface {
+            opacity: 0;
+            transform: translateY(20px);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: #001a00;
+            border-bottom: 2px solid #00ff00;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #00ff00;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: #001100;
+            border-right: 1px solid #00ff00;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .map-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+            background: #001a00;
+        }
+
+        /* Элементы управления */
+        .control-group {
+            background: #002200;
+            border: 1px solid #00ff00;
+            border-radius: 5px;
+            padding: 15px;
+        }
+
+        .control-title {
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: #00ff00;
+            border-bottom: 1px solid #00ff00;
+            padding-bottom: 5px;
+        }
+
+        .input-group {
+            margin-bottom: 10px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 8px;
+            background: #001100;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            border-radius: 3px;
+        }
+
+        .button {
+            background: #003300;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 10px 15px;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .button:hover {
+            background: #004400;
+        }
+
+        .button.active {
+            background: #00ff00;
+            color: #000;
+        }
+
+        .button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .button.danger {
+            background: #330000;
+            border-color: #ff0000;
+            color: #ff0000;
+        }
+
+        .button.danger:hover {
+            background: #440000;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 8px;
+            font-size: 12px;
+        }
+
+        /* Легенда */
+        .legend {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .legend-title {
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: #00ff00;
+        }
+
+        .color-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            margin-bottom: 5px;
+            border: 1px solid transparent;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .color-item:hover {
+            background: #002200;
+        }
+
+        .color-item.selected {
+            border-color: #00ff00;
+            background: #002200;
+        }
+
+        .color-box {
+            width: 20px;
+            height: 20px;
+            border: 1px solid #fff;
+            border-radius: 3px;
+        }
+
+        .legend-empty {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 20px;
+        }
+
+        /* Статус рисования */
+        .drawing-status {
+            display: none;
+            background: #003300;
+            border: 1px solid #00ff00;
+            padding: 10px;
+            border-radius: 3px;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        /* Индикатор сохранения */
+        .save-indicator {
+            display: none;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #003300;
+            border: 1px solid #00ff00;
+            padding: 10px 15px;
+            border-radius: 3px;
+            z-index: 1000;
+        }
+
+        /* Тултип */
+        .gang-tooltip {
+            display: none;
+            position: fixed;
+            background: #001100;
+            border: 2px solid #00ff00;
+            border-radius: 5px;
+            padding: 15px;
+            width: 250px;
+            z-index: 100;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+        }
+
+        .tooltip-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #00ff00;
+            padding-bottom: 5px;
+        }
+
+        .tooltip-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #00ff00;
+        }
+
+        .tooltip-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .tooltip-btn {
+            background: none;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 3px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .tooltip-info {
+            font-size: 14px;
+        }
+
+        .info-row {
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .info-label {
+            color: #00aa00;
+        }
+
+        .info-value {
+            color: #00ff00;
+            text-align: right;
+            flex: 1;
+            margin-left: 10px;
+        }
+
+        /* Модальное окно */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: #001100;
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            padding: 20px;
+            width: 400px;
+            max-width: 90%;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #00ff00;
+            padding-bottom: 10px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            color: #00ff00;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .modal-btn {
+            flex: 1;
+        }
+
+        /* Режим удаления */
+        body.delete-mode #map {
+            cursor: not-allowed;
+        }
+
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 250px;
+            }
+            
+            .header {
+                padding: 10px;
+            }
+            
+            .logo {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Экран загрузки -->
+    <div id="loading-screen">
+        <div class="loading-content">
+            <div class="loading-title">SFPD GANG TERRITORY SYSTEM</div>
+            <div class="password-field">
+                <span id="password-display"></span>
+            </div>
+            <div id="loading-dots" class="loading-dots">Загрузка системы...</div>
+            <div id="welcome-message" class="welcome-message">
+                Добро пожаловать, офицер. Доступ к карте территорий предоставлен.
+            </div>
+        </div>
+    </div>
+
+    <!-- Основной интерфейс -->
+    <div id="main-interface">
+        <!-- Шапка -->
+        <div class="header">
+            <div class="logo">SFPD - КАРТА ТЕРРИТОРИЙ БАНД</div>
+            <div class="controls">
+                <button id="export-data" class="button">Экспорт</button>
+                <button id="import-data" class="button">Импорт</button>
+                <input type="file" id="import-file" accept=".json" style="display: none;">
+            </div>
+        </div>
+
+        <!-- Основное содержимое -->
+        <div class="main-content">
+            <!-- Боковая панель -->
+            <div class="sidebar">
+                <!-- Управление режимами -->
+                <div class="control-group">
+                    <div class="control-title" id="mode-title">Добавить новую группировку</div>
+                    
+                    <div class="mode-selector">
+                        <button id="mode-new" class="button mode-btn active">Новая</button>
+                        <button id="mode-add" class="button mode-btn">Добавить</button>
+                        <button id="mode-delete" class="button mode-btn danger">Удалить</button>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="gang-name">Название банды:</label>
+                        <input type="text" id="gang-name" placeholder="Введите название">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="gang-color">Цвет территории:</label>
+                        <input type="color" id="gang-color" value="#ff4444">
+                    </div>
+
+                    <button id="add-territory" class="button">Начать выделение территории</button>
+                    <button id="cancel-drawing" class="button" style="display: none; margin-top: 5px;">Отменить рисование</button>
+                    
+                    <div id="drawing-status" class="drawing-status">
+                        Выделите территорию на карте
+                    </div>
+                </div>
+
+                <!-- Управление картой -->
+                <div class="control-group">
+                    <div class="control-title">Управление картой</div>
+                    <div style="display: flex; gap: 5px; margin-bottom: 10px;">
+                        <button id="zoom-in" class="button" style="flex: 1;">+ Приблизить</button>
+                        <button id="zoom-out" class="button" style="flex: 1;">- Отдалить</button>
+                    </div>
+                    <button id="reset-view" class="button">Сбросить вид</button>
+                    <button id="clear-all" class="button danger" style="margin-top: 10px;">Очистить все</button>
+                </div>
+
+                <!-- Легенда -->
+                <div class="control-group legend">
+                    <div class="control-title">Зарегистрированные группировки</div>
+                    <div id="legend-container" class="legend-container">
+                        <div class="legend-empty">Нет зарегистрированных группировок</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Контейнер карты -->
+            <div class="map-container">
+                <canvas id="map"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Тултип с информацией о банде -->
+    <div id="gang-tooltip" class="gang-tooltip">
+        <div class="tooltip-header">
+            <div id="tooltip-title" class="tooltip-title">Название банды</div>
+            <div class="tooltip-actions">
+                <button id="tooltip-edit" class="tooltip-btn">✎</button>
+                <button id="tooltip-close" class="tooltip-btn">×</button>
+            </div>
+        </div>
+        <div class="tooltip-info">
+            <div class="info-row">
+                <span class="info-label">Лидер:</span>
+                <span id="tooltip-leader-value" class="info-value">НЕ УСТАНОВЛЕН</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Члены:</span>
+                <span id="tooltip-members-value" class="info-value">0</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Описание:</span>
+                <span id="tooltip-description-value" class="info-value">ИНФОРМАЦИЯ ОТСУТСТВУЕТ</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно редактирования -->
+    <div id="info-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Редактирование информации о банде</div>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <label for="modal-gang-name">Название банды:</label>
+                    <input type="text" id="modal-gang-name">
+                </div>
+                <div class="input-group">
+                    <label for="modal-gang-leader">Лидер:</label>
+                    <input type="text" id="modal-gang-leader" placeholder="Не установлен">
+                </div>
+                <div class="input-group">
+                    <label for="modal-gang-members">Количество членов:</label>
+                    <input type="number" id="modal-gang-members" placeholder="0" min="0">
+                </div>
+                <div class="input-group">
+                    <label for="modal-gang-description">Описание:</label>
+                    <textarea id="modal-gang-description" placeholder="Информация отсутствует" style="width: 100%; height: 80px; padding: 8px; background: #001100; border: 1px solid #00ff00; color: #00ff00; border-radius: 3px; resize: vertical;"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="delete-territory" class="button danger modal-btn">Удалить все территории</button>
+                <button id="cancel-edit" class="button modal-btn">Отмена</button>
+                <button id="save-info" class="button modal-btn">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Индикатор сохранения -->
+    <div id="save-indicator" class="save-indicator">
+        Данные сохранены ✓
+    </div>
+
+    <!-- Ваш существующий JavaScript код -->
+    <script>
+        // Весь ваш существующий JavaScript код здесь...
+        // [вставьте весь предоставленный JavaScript код]
+    </script>
+</body>
+</html>
