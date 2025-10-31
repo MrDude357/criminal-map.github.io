@@ -1298,54 +1298,75 @@ document.addEventListener('click', () => userInteracted = true);
         ctx.restore();
     }
 
-    function updateLegend() {
-        const legendContainer = document.getElementById('legend-container');
-        
-        if (territories.length === 0) {
-            legendContainer.innerHTML = '<div class="legend-empty">Нет зарегистрированных группировок</div>';
-            return;
+function updateLegend() {
+    const legendContainer = document.getElementById('legend-container');
+    
+    if (territories.length === 0) {
+        legendContainer.innerHTML = '<div class="legend-empty">Нет зарегистрированных группировок</div>';
+        return;
+    }
+    
+    const uniqueGangs = [];
+    const gangNames = new Set();
+    
+    territories.forEach(territory => {
+        if (!gangNames.has(territory.name)) {
+            gangNames.add(territory.name);
+            // ДОБАВЛЯЕМ ПОЛНУЮ ИНФОРМАЦИЮ О БАНДЕ
+            uniqueGangs.push({
+                name: territory.name,
+                color: territory.color,
+                leader: territory.leader,
+                members: territory.members,
+                description: territory.description
+            });
+        }
+    });
+    
+    legendContainer.innerHTML = '';
+    
+    uniqueGangs.forEach(gang => {
+        const colorItem = document.createElement('div');
+        colorItem.className = 'color-item';
+        if (selectedGang && selectedGang.name === gang.name) {
+            colorItem.classList.add('selected');
         }
         
-        const uniqueGangs = [];
-        const gangNames = new Set();
+        // ДОБАВЛЯЕМ ИНФОРМАЦИЮ О ЛИДЕРЕ И КОЛИЧЕСТВЕ ЧЛЕНОВ В ЛЕГЕНДУ
+        const infoHtml = gang.leader || gang.members ? 
+            `<div style="font-size: 0.7rem; margin-top: 4px; color: #88ccff;">
+                ${gang.leader ? `👑 ${gang.leader}` : ''}
+                ${gang.members ? ` | 👥 ${gang.members}` : ''}
+            </div>` : '';
         
-        territories.forEach(territory => {
-            if (!gangNames.has(territory.name)) {
-                gangNames.add(territory.name);
-                uniqueGangs.push(territory);
-            }
-        });
-        
-        legendContainer.innerHTML = '';
-        
-        uniqueGangs.forEach(gang => {
-            const colorItem = document.createElement('div');
-            colorItem.className = 'color-item';
-            if (selectedGang && selectedGang.name === gang.name) {
-                colorItem.classList.add('selected');
-            }
-            colorItem.innerHTML = `
-                <div class="color-box" style="background-color: ${gang.color};"></div>
-                <span>${gang.name}</span>
-            `;
-            colorItem.addEventListener('click', () => selectGang(gang));
-            legendContainer.appendChild(colorItem);
-        });
-    }
+        colorItem.innerHTML = `
+            <div class="color-box" style="background-color: ${gang.color};"></div>
+            <div>
+                <div>${gang.name}</div>
+                ${infoHtml}
+            </div>
+        `;
+        colorItem.addEventListener('click', () => selectGang(gang));
+        legendContainer.appendChild(colorItem);
+    });
+}
 
-    function selectGang(gang) {
-        if (mode === 'delete' || mode === 'crime') return;
-        
-        selectedGang = gang;
-        updateLegend();
-        
-        if (mode === 'add') {
-            document.getElementById('gang-name').value = gang.name;
-            document.getElementById('gang-color').value = gang.color;
-            document.getElementById('gang-name').disabled = true;
-            document.getElementById('gang-color').disabled = true;
-        }
+function selectGang(gang) {
+    if (mode === 'delete' || mode === 'crime') return;
+    
+    // ИЩЕМ ПОЛНУЮ ИНФОРМАЦИЮ О БАНДЕ ИЗ СУЩЕСТВУЮЩИХ ТЕРРИТОРИЙ
+    const fullGangInfo = territories.find(t => t.name === gang.name);
+    selectedGang = fullGangInfo || gang;
+    
+    updateLegend();
+    
+    if (mode === 'add') {
+        document.getElementById('gang-name').value = selectedGang.name;
+        document.getElementById('gang-color').value = selectedGang.color;
+        document.getElementById('gang-name').disabled = true;
+        document.getElementById('gang-color').disabled = true;
     }
+}
 
     function setMode(newMode) {
         mode = newMode;
@@ -1593,53 +1614,72 @@ document.addEventListener('click', () => userInteracted = true);
         canvas.style.cursor = 'crosshair';
     }
 
-    function handleDrawing(e) {
-        if (!isDrawing) return;
+function handleDrawing(e) {
+    if (!isDrawing) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left - offsetX) / scale;
+    const y = (e.clientY - rect.top - offsetY) / scale;
+    
+    if (!currentTerritory) {
+        // Начало рисования
+        let gangName, gangColor, gangLeader, gangMembers, gangDescription;
         
-        const rect = canvas.getBoundingClientRect();
-        const x = (e.clientX - rect.left - offsetX) / scale;
-        const y = (e.clientY - rect.top - offsetY) / scale;
-        
-        if (!currentTerritory) {
-            // Начало рисования
-            let gangName, gangColor;
+        if (mode === 'new') {
+            gangName = document.getElementById('gang-name').value;
+            gangColor = document.getElementById('gang-color').value;
+            // Для новой банды остальные поля будут пустыми
+            gangLeader = '';
+            gangMembers = 0;
+            gangDescription = '';
+        } else if (mode === 'add' && selectedGang) {
+            gangName = selectedGang.name;
+            gangColor = selectedGang.color;
             
-            if (mode === 'new') {
-                gangName = document.getElementById('gang-name').value;
-                gangColor = document.getElementById('gang-color').value;
-            } else if (mode === 'add' && selectedGang) {
-                gangName = selectedGang.name;
-                gangColor = selectedGang.color;
+            // ИЩЕМ ПЕРВУЮ ТЕРРИТОРИЮ ЭТОЙ БАНДЫ, ЧТОБЫ СКОПИРОВАТЬ ВСЕ ДАННЫЕ
+            const existingTerritory = territories.find(t => t.name === gangName);
+            if (existingTerritory) {
+                gangLeader = existingTerritory.leader || '';
+                gangMembers = existingTerritory.members || 0;
+                gangDescription = existingTerritory.description || '';
             } else {
-                alert('Выберите группировку для добавления территории');
-                cancelDrawing();
-                return;
+                gangLeader = '';
+                gangMembers = 0;
+                gangDescription = '';
             }
-            
-            if (!gangName) {
-                alert('Введите название группировки');
-                cancelDrawing();
-                return;
-            }
-            
-            startX = x;
-            startY = y;
-            
-            currentTerritory = {
-                x: x,
-                y: y,
-                width: 0,
-                height: 0,
-                name: gangName,
-                color: gangColor
-            };
         } else {
-            // Обновление размера территории
-            currentTerritory.width = x - startX;
-            currentTerritory.height = y - startY;
-            drawMap();
+            alert('Выберите группировку для добавления территории');
+            cancelDrawing();
+            return;
         }
+        
+        if (!gangName) {
+            alert('Введите название группировки');
+            cancelDrawing();
+            return;
+        }
+        
+        startX = x;
+        startY = y;
+        
+        currentTerritory = {
+            x: x,
+            y: y,
+            width: 0,
+            height: 0,
+            name: gangName,
+            color: gangColor,
+            leader: gangLeader,
+            members: gangMembers,
+            description: gangDescription
+        };
+    } else {
+        // Обновление размера территории
+        currentTerritory.width = x - startX;
+        currentTerritory.height = y - startY;
+        drawMap();
     }
+}
 
     function finishDrawing(e) {
         if (!isDrawing || !currentTerritory) return;
