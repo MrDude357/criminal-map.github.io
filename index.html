@@ -1154,7 +1154,6 @@ document.addEventListener('click', () => userInteracted = true);
         
         for (let i = 0; i < password.length; i++) {
             await new Promise(resolve => setTimeout(resolve, 100 + Math.random() * 100));
-            playTypeSound();
             currentPassword += password[i];
             document.getElementById('password-display').innerHTML = currentPassword + '<span class="typing-cursor"></span>';
         }
