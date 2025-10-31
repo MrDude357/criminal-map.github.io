@@ -1283,7 +1283,7 @@
         // Рисуем маркеры преступлений
         crimes.forEach(crime => {
             if (crimeMarkerImage.complete) {
-                ctx.drawImage(crimeMarkerImage, crime.x - 4, crime.y - 4, 4, 4);
+                ctx.drawImage(crimeMarkerImage, crime.x - 6, crime.y - 6, 6, 6);
             } else {
                 // Fallback - красный кружок если изображение не загрузилось
                 ctx.fillStyle = '#ff0000';
