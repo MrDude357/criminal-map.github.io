@@ -1143,114 +1143,42 @@
         return gangNames.size;
     }
 
-// Аудио элементы для звуков из Mixkit
-const typeSound = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-keyboard-typing-1386.mp3");
-const enterSound = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-select-click-1109.mp3");
-
 let userInteracted = false;
-let soundsLoaded = false;
+let audioContext = null;
 
-// Функция для предзагрузки звуков
-function preloadSounds() {
-    if (soundsLoaded) return;
+function createBeepSound(frequency, duration, volume = 0.1) {
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
     
-    console.log('🔊 Загрузка звуков...');
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
     
-    // Устанавливаем настройки звуков
-    typeSound.volume = 0.3;
-    enterSound.volume = 0.5;
-    typeSound.preload = 'auto';
-    enterSound.preload = 'auto';
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
     
-    // Пытаемся загрузить звуки
-    const loadPromises = [];
+    oscillator.frequency.value = frequency;
+    oscillator.type = 'sine';
     
-    const typeLoad = new Promise((resolve) => {
-        typeSound.addEventListener('canplaythrough', resolve, { once: true });
-        typeSound.addEventListener('error', resolve, { once: true }); // Продолжаем даже при ошибке
-    });
+    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+    gainNode.gain.linearRampToValueAtTime(volume, audioContext.currentTime + 0.01);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
     
-    const enterLoad = new Promise((resolve) => {
-        enterSound.addEventListener('canplaythrough', resolve, { once: true });
-        enterSound.addEventListener('error', resolve, { once: true }); // Продолжаем даже при ошибке
-    });
-    
-    loadPromises.push(typeLoad, enterLoad);
-    
-    // Загружаем звуки
-    typeSound.load();
-    enterSound.load();
-    
-    Promise.all(loadPromises).then(() => {
-        soundsLoaded = true;
-        console.log('✅ Звуки готовы к использованию');
-    }).catch(error => {
-        console.warn('⚠️ Ошибка загрузки звуков:', error);
-        soundsLoaded = true; // Все равно помечаем как загруженные, чтобы не блокировать интерфейс
-    });
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + duration);
 }
 
-// Функции воспроизведения звуков с улучшенной обработкой ошибок
 function playTypeSound() {
-    if (!userInteracted || !soundsLoaded) return;
-    
-    try {
-        typeSound.currentTime = 0;
-        const playPromise = typeSound.play();
-        
-        if (playPromise !== undefined) {
-            playPromise.catch(error => {
-                // Игнорируем ошибки автозапуска, они нормальны
-                if (error.name !== 'NotAllowedError') {
-                    console.log('Type sound play failed:', error);
-                }
-            });
-        }
-    } catch (error) {
-        // Игнорируем ошибки, чтобы не нарушать работу интерфейса
-    }
+    if (!userInteracted) return;
+    createBeepSound(800, 0.05, 0.1);
 }
 
 function playEnterSound() {
-    if (!userInteracted || !soundsLoaded) return;
-    
-    try {
-        enterSound.currentTime = 0;
-        const playPromise = enterSound.play();
-        
-        if (playPromise !== undefined) {
-            playPromise.catch(error => {
-                // Игнорируем ошибки автозапуска, они нормальны
-                if (error.name !== 'NotAllowedError') {
-                    console.log('Enter sound play failed:', error);
-                }
-            });
-        }
-    } catch (error) {
-        // Игнорируем ошибки, чтобы не нарушать работу интерфейса
-    }
+    if (!userInteracted) return;
+    createBeepSound(400, 0.1, 0.2);
 }
 
-// Отслеживание взаимодействия пользователя
-document.addEventListener('click', function() {
-    if (!userInteracted) {
-        userInteracted = true;
-        preloadSounds();
-    }
-});
-
-document.addEventListener('keydown', function() {
-    if (!userInteracted) {
-        userInteracted = true;
-        preloadSounds();
-    }
-});
-
-// Начинаем предзагрузку звуков при загрузке страницы
-document.addEventListener('DOMContentLoaded', function() {
-    // Ждем немного перед началом предзагрузки
-    setTimeout(preloadSounds, 1000);
-});
+document.addEventListener('click', () => userInteracted = true);
 
     // Анимация ввода пароля
     async function startLoginAnimation() {
