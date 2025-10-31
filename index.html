@@ -1258,6 +1258,16 @@
                     territory.x + territory.width / 2, 
                     territory.y + territory.height / 2
                 );
+                 if (selectedTerritory && territory === selectedTerritory) {
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(
+                territory.name, 
+                territory.x + territory.width / 2, 
+                territory.y + territory.height / 2
+            );
             }
         });
         
