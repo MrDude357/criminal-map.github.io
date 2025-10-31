@@ -1160,7 +1160,6 @@ document.addEventListener('click', () => userInteracted = true);
         }
         
         await new Promise(resolve => setTimeout(resolve, 800));
-        playEnterSound();
         
         document.getElementById('password-display').innerHTML = password;
         document.getElementById('loading-dots').style.display = 'block';
