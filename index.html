@@ -1426,38 +1426,39 @@
     }
 
     function showTooltip(territory, x, y) {
-        document.getElementById('tooltip-title').textContent = territory.name;
-        document.getElementById('tooltip-leader-value').textContent = territory.leader || 'НЕ УСТАНОВЛЕН';
-        document.getElementById('tooltip-members-value').textContent = territory.members || '0';
-        document.getElementById('tooltip-description-value').textContent = territory.description || 'ИНФОРМАЦИЯ ОТСУТСТВУЕТ';
-        
-        const gangTooltip = document.getElementById('gang-tooltip');
-        const tooltipWidth = gangTooltip.offsetWidth;
-        const tooltipHeight = gangTooltip.offsetHeight;
-        const windowWidth = window.innerWidth;
-        const windowHeight = window.innerHeight;
-        
-        let posX = x + 15;
-        let posY = y - tooltipHeight / 2;
-        
-        if (posX + tooltipWidth > windowWidth) {
-            posX = x - tooltipWidth - 15;
-        }
-        
-        if (posY < 0) {
-            posY = 10;
-        } else if (posY + tooltipHeight > windowHeight) {
-            posY = windowHeight - tooltipHeight - 10;
-        }
-        
-        gangTooltip.style.left = posX + 'px';
-        gangTooltip.style.top = posY + 'px';
-        gangTooltip.style.display = 'block';
-        
-        selectedTerritory = territory;
-        showGangNames = true;
-        drawMap();
+    document.getElementById('tooltip-title').textContent = territory.name;
+    document.getElementById('tooltip-leader-value').textContent = territory.leader || 'НЕ УСТАНОВЛЕН';
+    document.getElementById('tooltip-members-value').textContent = territory.members || '0';
+    document.getElementById('tooltip-description-value').textContent = territory.description || 'ИНФОРМАЦИЯ ОТСУТСТВУЕТ';
+    
+    const gangTooltip = document.getElementById('gang-tooltip');
+    const tooltipWidth = gangTooltip.offsetWidth;
+    const tooltipHeight = gangTooltip.offsetHeight;
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    
+    let posX = x + 15;
+    let posY = y - tooltipHeight / 2;
+    
+    if (posX + tooltipWidth > windowWidth) {
+        posX = x - tooltipWidth - 15;
     }
+    
+    if (posY < 0) {
+        posY = 10;
+    } else if (posY + tooltipHeight > windowHeight) {
+        posY = windowHeight - tooltipHeight - 10;
+    }
+    
+    gangTooltip.style.left = posX + 'px';
+    gangTooltip.style.top = posY + 'px';
+    gangTooltip.style.display = 'block';
+    
+    selectedTerritory = territory;
+    
+    // ВМЕСТО ГЛОБАЛЬНОГО ФЛАГА - сохраняем выбранную территорию для отображения названия
+    drawMap();
+}
 
     function hideTooltip() {
         document.getElementById('gang-tooltip').style.display = 'none';
