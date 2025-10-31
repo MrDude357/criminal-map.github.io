@@ -1143,24 +1143,6 @@
         return gangNames.size;
     }
 
-let userInteracted = false;
-
-function playTypeSound() {
-    if (!userInteracted) return;
-    // Просто вибрация если поддерживается
-    if (navigator.vibrate) {
-        navigator.vibrate(10);
-    }
-}
-
-function playEnterSound() {
-    if (!userInteracted) return;
-    // Более длинная вибрация для подтверждения
-    if (navigator.vibrate) {
-        navigator.vibrate(30);
-    }
-}
-
 document.addEventListener('click', () => userInteracted = true);
     
     // Анимация ввода пароля
