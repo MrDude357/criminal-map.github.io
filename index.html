@@ -1283,7 +1283,7 @@
         // Рисуем маркеры преступлений
         crimes.forEach(crime => {
             if (crimeMarkerImage.complete) {
-                ctx.drawImage(crimeMarkerImage, crime.x - 12, crime.y - 24, 24, 24);
+                ctx.drawImage(crimeMarkerImage, crime.x - 8, crime.y - 8, 8, 8);
             } else {
                 // Fallback - красный кружок если изображение не загрузилось
                 ctx.fillStyle = '#ff0000';
@@ -1551,7 +1551,7 @@
     function startCrimePlacement() {
         isPlacingCrime = true;
         isDeletingCrime = false;
-        canvas.style.cursor = `url('https://i.imgur.com/8OeUOuE.png') 2 5, crosshair`;
+        canvas.style.cursor = `url('https://i.imgur.com/8OeUOuE.png') 12 24, crosshair`;
         document.getElementById('crime-status').style.display = 'block';
         document.getElementById('cancel-crime').style.display = 'block';
         document.getElementById('add-crime').disabled = true;
